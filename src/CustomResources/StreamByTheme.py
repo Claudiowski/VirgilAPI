@@ -31,17 +31,19 @@ class StreamByThemeList(Resource):
     def post(self):
         query = "SELECT s.id, s.url, s.name, s.id_category FROM stream s"
         query += " INNER JOIN category c ON s.id_category = c.id"
-        query += " WHERE c.id_theme IN "
-        for e in request.form['id_themes']:
+        query += " WHERE c.id_theme IN ("
+        id_dict = request.json['id_themes']
+        id_themes = []
+        for e in id_dict:
             query += "%s, "
-        id_themes = request.form['id_themes']
-        strbt = get_service().get_custom_contents(query, id_themes)
+            id_themes.append(int(e))
+        strbt = get_service().get_custom_contents(query[:-2] + ")", id_themes)
         if strbt is None:
             abort(404, "No stream corresponding to this theme in database.")
         array_to_return = []
         for e in strbt:
             array_to_return.append(StreamDao(e))
-        return array_to_return, 200"""
+        return array_to_return, 200
 
 
 class StreamByThemeId(Resource):

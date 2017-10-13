@@ -26,11 +26,13 @@ class StreamByCategoryList(Resource):
     @marshal_with(resource_fields)
     def post(self):
         query = "SELECT s.id, s.url, s.name, s.id_category FROM stream s"
-        query += " WHERE s.id_category IN "
-        for e in request.form['id_categories']: 
+        query += " WHERE s.id_category IN ("
+        id_dict = request.json['id_categories']
+        id_categories = []
+        for e in id_dict: 
             query += "%s, "
-        id_categories = request.form['id_categories']
-        strbc = get_service().get_custom_contents(query, id_categories)
+            id_categories.append(int(e))
+        strbc = get_service().get_custom_contents(query[:-2] + ")", id_categories)
         if strbc is None:
             abort(404, "No stream corresponding to this category in database.")
         array_to_return = []
