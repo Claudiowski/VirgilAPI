@@ -62,8 +62,14 @@ api.add_resource(CategoryByThemeName, '/category-by-theme-name')
 api.add_resource(CategoryByThemeId, '/category-by-theme-id')
 api.add_resource(StreamByCategory, '/stream-by-category')
 api.add_resource(FavoriteByStream, '/favorite-by-stream')
+
+    # By category
+api.add_resource(StreamByCategoryList, '/stream-by-category-list')
+
+    # By theme
 api.add_resource(StreamByThemeName, '/stream-by-theme-name')
 api.add_resource(StreamByThemeId, '/stream-by-theme-id')
+api.add_resource(StreamByThemeList, '/stream-by-theme-list')
 
     # By reader
 api.add_resource(ThemeByReader, '/theme-by-reader')

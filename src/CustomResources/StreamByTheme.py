@@ -25,6 +25,25 @@ class StreamByThemeName(Resource):
         return array_to_return, 200
 
 
+class StreamByThemeList(Resource):
+
+    @marshal_with(resource_fields)
+    def post(self):
+        query = "SELECT s.id, s.url, s.name, s.id_category FROM stream s"
+        query += " INNER JOIN category c ON s.id_category = c.id"
+        query += " WHERE c.id_theme IN "
+        for e in request.form['id_themes']:
+            query += "%s, "
+        id_themes = request.form['id_themes']
+        strbt = get_service().get_custom_contents(query, id_themes)
+        if strbt is None:
+            abort(404, "No stream corresponding to this theme in database.")
+        array_to_return = []
+        for e in strbt:
+            array_to_return.append(StreamDao(e))
+        return array_to_return, 200"""
+
+
 class StreamByThemeId(Resource):
 
     @marshal_with(resource_fields)
