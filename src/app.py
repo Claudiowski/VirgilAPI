@@ -28,6 +28,9 @@ from CustomResources.FavoriteByReader import *
 from CustomResources.CategoryByReader import *
 from CustomResources.StreamByReader import *
 
+from CustomResources.FavoriteByCategory import *
+from CustomResources.FavoriteByTheme import *
+
 
 app = Flask(__name__)
 
@@ -65,11 +68,13 @@ api.add_resource(FavoriteByStream, '/favorite-by-stream')
 
     # By category
 api.add_resource(StreamByCategoryList, '/stream-by-category-list')
+api.add_resource(FavoriteByCategoryList, '/favorite-by-category-list')
 
     # By theme
 api.add_resource(StreamByThemeName, '/stream-by-theme-name')
 api.add_resource(StreamByThemeId, '/stream-by-theme-id')
 api.add_resource(StreamByThemeList, '/stream-by-theme-list')
+api.add_resource(FavoriteByThemeList, '/favorite-by-theme-list')
 
     # By reader
 api.add_resource(ThemeByReader, '/theme-by-reader')
