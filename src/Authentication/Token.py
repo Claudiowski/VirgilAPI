@@ -6,7 +6,6 @@ from flask_restful import Resource, abort
 from strgen import StringGenerator
 import jwt
 
-from DbAccess.Service import *
 from Authentication.Authentication import *
 
 

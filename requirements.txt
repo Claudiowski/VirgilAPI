@@ -1,5 +1,6 @@
 flask
 flask_restful
+psycopg2
 sqlalchemy
 ConfigParser
 StringGenerator
