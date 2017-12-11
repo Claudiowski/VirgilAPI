@@ -1,4 +1,5 @@
 from flask_restful import fields
+from sqlalchemy import Column, Integer, String
 
 
 resource_fields = {
@@ -8,13 +9,13 @@ resource_fields = {
     'secret':   fields.String(default=None)
 }
 
-
-class ReaderDao:
+class ReaderDao(Base):
     """ The Reader entity itself. """
 
-    def __init__(self, array):
-        """ Builds the entity from a list. """
-        self.id = array[0]
-        self.pseudo = array[1]
-        self.password = array[2]
-        self.secret = array[3]
+    __tablename__ = 'reader'
+
+    _id = Column(Integer, primary_key=True)
+    _pseudo = Column(String)
+    _password = Column(String)
+    _secret = Column(String)
+

@@ -8,6 +8,8 @@ from flask_restful import Api, abort
 
 import jwt
 
+from sqlalchemy.ext.declarative import declarative_base
+
 # local imports
 from Authentication.Token import *
 
@@ -35,6 +37,8 @@ from CustomResources.FavoriteByTheme import *
 app = Flask(__name__)
 
 api = Api(app)
+
+g.Base = declarative_base()
 
 
 # Route for authentication

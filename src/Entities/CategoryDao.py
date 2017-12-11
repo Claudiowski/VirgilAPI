@@ -8,6 +8,15 @@ resource_fields = {
     'name_theme': fields.String(default=None)
 }
 
+from sqlalchemy import Column, Integer, String
+class CategoryDao(Base):
+    __tablename__ = 'category'
+
+    _id = Column(Integer, primary_key=True)
+    _name = Column(String)
+    _fullname = Column(String)
+    _password = Column(String)
+
 
 class CategoryDao:
     """ The Category entity itself. """
