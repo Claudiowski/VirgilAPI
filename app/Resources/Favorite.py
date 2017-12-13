@@ -2,14 +2,12 @@
 
 import datetime
 
-from flask import g, request, Response, jsonify
+from flask import g, request, Response, current_app
 from flask_restful import Resource, marshal_with, abort
 
-from models import ThemeDao
+from ..models import FavoriteDao
 
-from parsers import favorite_fields
-
-from utils import session
+from .parsers import favorite_fields
 
 
 class Favorite(Resource):
@@ -19,7 +17,9 @@ class Favorite(Resource):
     def get(self, favorite_id):
         """ Returns a single Favorite. """
 
-        theme = session().query(ThemeDao).filter(ThemeDao.id == theme_id)
+        session = current_app.session
+
+        theme = session.query(ThemeDao).filter(ThemeDao.id == theme_id).first()
 
         if theme is None:
             abort(404, message="Theme {} does not exist.".format(theme_id))
@@ -29,23 +29,27 @@ class Favorite(Resource):
     def delete(self, favorite_id):
         """ Deletes a single Favorite. """
 
-        if session().query(FavoriteDao).filter(FavoriteDao.id == favorite_id).delete():
+        session = current_app.session
+
+        if session.query(FavoriteDao).filter(FavoriteDao.id == favorite_id).delete():
             abort(404, message="Favorite {} does not exist.".format(favorite_id))
 
-        session().commit()
+        session.commit()
         return '', 200
 
     def put(self, favorite_id):
         """ Edits a single Favorite. """
 
+        session = current_app.session
+
         data = request.json
-        favorite = session().query(FavoriteDao).filter(FavoriteDao.id == favorite_id)
+        favorite = session.query(FavoriteDao).filter(FavoriteDao.id == favorite_id).first()
 
         if favorite is None():
             abort(404, message="Favorite not found.")
 
         favorite = format_update_favorite(favorite, data)
-        session().commit()
+        session.commit()
 
         return '', 200
 
@@ -57,21 +61,20 @@ class FavoriteList(Resource):
     def get(self):
         """ Returns every single Favorite. """
 
-        favorites = session().query(FavoriteDao).all()
+        session = current_app.session
+
+        favorites = session.query(FavoriteDao).all()
 
         if favorites is None:
             abort(404, "No favorite in database.")
 
-        array_to_return = []
-        
-        for e in favorites:
-            array_to_return.append(FavoriteDao(e))
-
-        return array_to_return, 200
+        return favorites, 200
 
     @marshal_with(favorite_fields)
     def post(self):
         """ Posts a single Favorite. """
+
+        session = current_app.session
 
         data = request.json
         annotation = data.get('annotation')
@@ -83,7 +86,7 @@ class FavoriteList(Resource):
 
         favorite = FavoriteDao(annotation, url, title, description, publication_date, id_stream)
 
-        session().add(favorite)
+        session.add(favorite)
 
         if favorite is None:
             return abort(400, "The favorite could not be created.")

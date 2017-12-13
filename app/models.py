@@ -1,4 +1,5 @@
 
+from flask import g
 from flask_restful import fields
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, create_engine
 
@@ -20,7 +21,7 @@ class ReaderDao(Base):
     password = Column(String)
     secret = Column(String)
 
-    themes = relationship("Theme", backref="reader")
+    themes = relationship("ThemeDao", backref="reader")
 
 
 class ThemeDao(Base):
@@ -32,7 +33,7 @@ class ThemeDao(Base):
     name = Column(String)
     id_reader = Column(Integer, ForeignKey('reader.id'))
 
-    categories = relationship("Category", backref="theme")
+    categories = relationship("CategoryDao", backref="theme")
 
 
 class CategoryDao(Base):
@@ -44,7 +45,7 @@ class CategoryDao(Base):
     name = String()
     id_theme = Column(Integer, ForeignKey('theme.id'))
 
-    streams = relationship("Stream", backref="category")
+    streams = relationship("StreamDao", backref="category")
 
 
 class StreamDao(Base):
@@ -57,7 +58,7 @@ class StreamDao(Base):
     name = Column(String)
     id_category = Column(Integer, ForeignKey('category.id'))
 
-    favorites = relationship("Favorite", backref="stream")
+    favorites = relationship("FavoriteDao", backref="stream")
 
 
 class FavoriteDao(Base):
@@ -73,9 +74,6 @@ class FavoriteDao(Base):
     publication_date = Column(DateTime)
     id_stream = Column(Integer, ForeignKey('stream.id'))
 
-    stream = relationship("Stream", backref="favorite")
 
-
-engine = create_engine("postgresql://virgil:virgil@localhost/virgildb")
-Session = sessionmaker(bind=engine)
-Base.metadata.create_all(engine)
+if __name__ == 'main':
+    Base.metadata.create_all(app.engine)

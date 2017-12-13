@@ -1,13 +1,11 @@
 # coding: utf-8
 
-from flask import g, request, Response, jsonify
+from flask import g, request, Response, current_app
 from flask_restful import Resource,  marshal_with, abort
 
-from models import ThemeDao
+from ..models import CategoryDao
 
-from parsers import category_fields
-
-from utils import session
+from .parsers import category_fields
 
 
 class Category(Resource):
@@ -17,7 +15,9 @@ class Category(Resource):
     def get(self, cat_id):
         """ Returns a single Category. """
 
-        category = session().query(CategoryDao).filter(CategoryDao.id == cat_id)
+        session = current_app.session
+
+        category = session.query(CategoryDao).filter(CategoryDao.id == cat_id)
 
         if category is None:
             abort(404, message="Category {} does not exist.".format(cat_id))
@@ -27,23 +27,27 @@ class Category(Resource):
     def delete(self, cat_id):
         """ Deletes a single Category. """
 
-        if session().query(CategoryDao).filter(CategoryDao.id == cat_id).delete():
+        session = current_app.session
+
+        if session.query(CategoryDao).filter(CategoryDao.id == cat_id).delete():
             abort(404, message="Category {} does not exist.".format(cat_id))
 
-        session().commit()
+        session.commit()
         return '', 200
 
     def put(self, cat_id):
         """ Edits a single Category. """
 
+        session = current_app.session
+
         data = request.json
-        theme = session().query(CategoryDao).filter(CategoryDao.id == cat_id)
+        theme = session.query(CategoryDao).filter(CategoryDao.id == cat_id)
 
         if category is None():
             abort(404, message="Category not found.")
 
         category = format_update_category(category, data)
-        session().commit()
+        session.commit()
 
         return '', 200
 
@@ -52,23 +56,26 @@ class CategoryList(Resource):
     """ Flask_restful Resource for Category entity, for routes with no parameter."""
 
     @marshal_with(category_fields)
-    def get(self):
+    def get(self, theme=None):
         """ Returns every single Category. """
-        categories = session().query(CategoryDao).all()
+
+        session = current_app.session
+
+        if theme:
+            categories = session.query(CategoryDao).filter(CategoryDao.id_theme == theme).all()
+        else:
+            categories = session.query(CategoryDao).all()
 
         if categories is None:
             abort(404, "No category in database.")
 
-        array_to_return = []
-        
-        for e in categories:
-            array_to_return.append(CategoryDao(e))
-
-        return array_to_return, 200
+        return categories, 200
 
     @marshal_with(category_fields)
     def post(self):
         """ Posts a single Category. """
+
+        session = current_app.session
 
         data = request.json
         name = data.get('name')
@@ -76,7 +83,7 @@ class CategoryList(Resource):
 
         category = CategoryDao(name, id_theme)
 
-        session().add(category)
+        session.add(category)
 
         if category is None:
             return abort(400, "The category could not be created.")

@@ -1,13 +1,11 @@
 # coding: utf-8
 
-from flask import g, request, Response, jsonify
+from flask import g, request, Response, current_app
 from flask_restful import Resource, marshal_with, abort
 
-from models import StreamDao
+from ..models import StreamDao
 
-from parsers import stream_fields
-
-from utils import session
+from .parsers import stream_fields
 
 
 class Stream(Resource):
@@ -17,7 +15,9 @@ class Stream(Resource):
     def get(self, stream_id):
         """ Returns a single Stream. """
 
-        stream = session().query(StreamDao).filter(StreamDao.id == stream_id)
+        session = current_app.session
+
+        stream = session.query(StreamDao).filter(StreamDao.id == stream_id)
 
         if stream is None:
             abort(404, message="Stream {} does not exist.".format(stream_id))
@@ -27,23 +27,27 @@ class Stream(Resource):
     def delete(self, stream_id):
         """ Deletes a single Stream. """
 
-        if session().query(StreamDao).filter(StreamDao.id == stream_id).delete():
+        session = current_app.session
+
+        if session.query(StreamDao).filter(StreamDao.id == stream_id).delete():
             abort(404, message="Stream {} does not exist.".format(stream_id))
 
-        session().commit()
+        session.commit()
         return '', 200
 
     def put(self, stream_id):
         """ Edits a single Stream. """
+
+        session = current_app.session
  
         data = request.json
-        stream = session().query(StreamDao).filter(StreamDao.id == stream_id)
+        stream = session.query(StreamDao).filter(StreamDao.id == stream_id)
 
         if stream is None():
             abort(404, message="Stream not found.")
 
         stream = format_update_stream(stream, data)
-        session().commit()
+        session.commit()
 
         return '', 200
 
@@ -52,24 +56,28 @@ class StreamList(Resource):
     """ Flask_restful Resource for Stream entity, for routes with no parameter."""
 
     @marshal_with(stream_fields)
-    def get(self):
+    def get(self, reader=None):
         """ Returns every single Stream. """
 
-        streams = session().query(StreamDao).all()
+        session = current_app.session
+
+        if reader:
+            streams = session.query(StreamDao).join(CategoryDao)\
+                                .join(ThemeDao).join(ReaderDao)\
+                                .filter(ReaderDao.id == reader)
+        else:
+            streams = session.query(StreamDao).all()
 
         if streams is None:
-            abort(404, "No stream in database.")
+            abort(404, "Streams not found.")
 
-        array_to_return = []
-        
-        for e in streams:
-            array_to_return.append(StreamDao(e))
-
-        return array_to_return, 200
+        return streams, 200
 
     @marshal_with(stream_fields)
     def post(self):
         """ Posts a single Stream. """
+
+        session = current_app.session
 
         data = request.json
         url = data.get('url')
@@ -78,7 +86,7 @@ class StreamList(Resource):
 
         stream = StreamDao(url, name, id_cat)
 
-        session().add(stream)
+        session.add(stream)
 
         if stream is None:
             return abort(400, "The stream could not be created.")

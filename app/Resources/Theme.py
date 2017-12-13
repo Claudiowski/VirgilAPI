@@ -1,13 +1,12 @@
 # coding: utf-8
 
-from flask import g, request, Response, jsonify
+from flask import g, request, Response, current_app
 from flask_restful import Resource, marshal_with, abort
 
-from models import ThemeDao
+from ..models import ThemeDao
 
-from parsers import theme_fields
+from .parsers import theme_fields
 
-from utils import session
 
 class Theme(Resource):
     """ Flask_restful Resource for Theme entity, for routes with a parameter. """
@@ -16,7 +15,11 @@ class Theme(Resource):
     def get(self, theme_id):
         """ Returns a single Theme. """
 
-        theme = session().query(ThemeDao).filter(ThemeDao.id == theme_id)
+        session = current_app.session
+
+        data = request.args
+
+        theme = session.query(ThemeDao).filter(ThemeDao.id == theme_id)
 
         if theme is None:
             abort(404, message="Theme {} does not exist.".format(theme_id))
@@ -26,23 +29,27 @@ class Theme(Resource):
     def delete(self, theme_id):
         """ Deletes a single Theme. """
 
-        if session().query(ThemeDao).filter(ThemeDao.id == theme_id).delete():
+        session = current_app.session
+
+        if session.query(ThemeDao).filter(ThemeDao.id == theme_id).delete():
             abort(404, message="Theme {} does not exist.".format(theme_id))
 
-        session().commit()
+        session.commit()
         return '', 200
 
     def put(self, theme_id):
         """ Edits a single Theme. """
 
+        session = current_app.session
+
         data = request.json
-        theme = session().query(ThemeDao).filter(ThemeDao.id == theme_id)
+        theme = session.query(ThemeDao).filter(ThemeDao.id == theme_id)
 
         if theme is None():
             abort(404, message="Theme not found.")
 
         theme = format_update_theme(theme, data)
-        session().commit()
+        session.commit()
 
         return '', 200
 
@@ -51,24 +58,28 @@ class ThemeList(Resource):
     """ Flask_restful Resource for Theme entity, for routes with no parameter."""
 
     @marshal_with(theme_fields)
-    def get(self):
+    def get(self, reader=None):
         """ Returns every single Theme. """
 
-        themes = session().query(ThemeDao).all()
+        session = current_app.session
+
+        args = request.args
+
+        if reader:
+            themes = session.quert(ThemeDao).filter(ThemeDao.id_reader == reader).all()
+        else:
+            themes = session.query(ThemeDao).all()
 
         if themes is None:
-            abort(404, "No theme in database.")
+            abort(404, "Themes not found.")
 
-        array_to_return = []
-        
-        for e in themes:
-            array_to_return.append(ThemeDao(e))
-
-        return array_to_return, 200
+        return themes, 200
 
     @marshal_with(theme_fields)
     def post(self):
         """ Posts a single Theme. """
+
+        session = current_app.session
 
         data = request.json
         name = data.get('name')
@@ -76,7 +87,7 @@ class ThemeList(Resource):
 
         theme = ThemeDao(name, id_read)
 
-        theme = session().add(theme)
+        theme = session.add(theme)
 
         if theme is None:
             return abort(400, "The theme could not be created.")
