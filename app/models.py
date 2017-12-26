@@ -1,5 +1,5 @@
 
-from flask import g
+from flask import g, current_app
 from flask_restful import fields
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, create_engine
 
@@ -42,7 +42,7 @@ class CategoryDao(Base):
     __tablename__ = 'category'
 
     id = Column(Integer, primary_key=True)
-    name = String()
+    name = Column(String)
     id_theme = Column(Integer, ForeignKey('theme.id'))
 
     streams = relationship("StreamDao", backref="category")
@@ -75,5 +75,13 @@ class FavoriteDao(Base):
     id_stream = Column(Integer, ForeignKey('stream.id'))
 
 
-if __name__ == 'main':
-    Base.metadata.create_all(app.engine)
+if __name__ == '__main__':
+    
+    from config import *
+
+    conf = config['development']
+
+    engine = create_engine(conf.DB_URI + conf.DB_USER + ':'\
+             + conf.DB_PASSWORD + '@' + conf.DB_HOST + '/' + conf.DB_NAME)
+
+    Base.metadata.create_all(engine)

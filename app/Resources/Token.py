@@ -4,6 +4,7 @@ from flask_restful import Resource, abort
 from strgen import StringGenerator
 import jwt
 
+from ..models import ReaderDao
 
 class Token(Resource):
     """ Flask_restful Resource for Token entity. """
@@ -18,7 +19,7 @@ class Token(Resource):
 
         reader = session.query(ReaderDao)\
                             .filter(ReaderDao.pseudo == pseudo, ReaderDao.password == passwd)\
-                            .first_or_none()
+                            .first()
 
         if reader is not None:
             token, secret = generate_token_and_secret(reader)
@@ -27,6 +28,26 @@ class Token(Resource):
             return token.decode('utf-8'), 201
         else:
             abort(401, message="No reader for those credentials.")
+
+
+class Authentication(Resource):
+    """ Route to validate authentication. """
+
+    def get(self):
+        
+        session = current_app.session
+        token = request.headers.get('Token')
+
+        reader_id = jwt.decode(token, verify=False)['id']
+        secret = session.query(ReaderDao.secret).filter(ReaderDao.id == reader_id).first()[0]
+
+        try:
+            jwt.decode(token, secret)
+        except:
+            abort(401, message="Invalid authentication.")
+
+        return '', 200
+
 
 
 def generate_token_and_secret(reader):

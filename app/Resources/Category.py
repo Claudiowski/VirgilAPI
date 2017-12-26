@@ -12,39 +12,39 @@ class Category(Resource):
     """ Flask_restful Resource for Category entity, for routes with a parameter. """
 
     @marshal_with(category_fields)
-    def get(self, cat_id):
+    def get(self, id_cat):
         """ Returns a single Category. """
 
         session = current_app.session
 
-        category = session.query(CategoryDao).filter(CategoryDao.id == cat_id)
+        category = session.query(CategoryDao).filter(CategoryDao.id == id_cat).first()
 
         if category is None:
-            abort(404, message="Category {} does not exist.".format(cat_id))
+            return None, 204
 
-        return CategoryDao(category), 200
+        return category, 200
 
-    def delete(self, cat_id):
+    def delete(self, id_cat):
         """ Deletes a single Category. """
 
         session = current_app.session
 
-        if session.query(CategoryDao).filter(CategoryDao.id == cat_id).delete():
-            abort(404, message="Category {} does not exist.".format(cat_id))
+        if not session.query(CategoryDao).filter(CategoryDao.id == id_cat).delete():
+            return None, 204
 
         session.commit()
         return '', 200
 
-    def put(self, cat_id):
+    def put(self, id_cat):
         """ Edits a single Category. """
 
         session = current_app.session
 
         data = request.json
-        theme = session.query(CategoryDao).filter(CategoryDao.id == cat_id)
+        category = session.query(CategoryDao).filter(CategoryDao.id == id_cat).first()
 
-        if category is None():
-            abort(404, message="Category not found.")
+        if category is None:
+            return None, 204
 
         category = format_update_category(category, data)
         session.commit()
@@ -56,18 +56,18 @@ class CategoryList(Resource):
     """ Flask_restful Resource for Category entity, for routes with no parameter."""
 
     @marshal_with(category_fields)
-    def get(self, theme=None):
+    def get(self, id_theme=None):
         """ Returns every single Category. """
 
         session = current_app.session
 
-        if theme:
-            categories = session.query(CategoryDao).filter(CategoryDao.id_theme == theme).all()
+        if id_theme:
+            categories = session.query(CategoryDao).filter(CategoryDao.id_theme == id_theme).all()
         else:
             categories = session.query(CategoryDao).all()
 
-        if categories is None:
-            abort(404, "No category in database.")
+        if len(categories) is 0:
+            return None, 204
 
         return categories, 200
 
@@ -81,24 +81,21 @@ class CategoryList(Resource):
         name = data.get('name')
         id_theme = data.get('id_theme')
 
-        category = CategoryDao(name, id_theme)
-
-        session.add(category)
+        category = CategoryDao(name=name, id_theme=id_theme)
 
         if category is None:
-            return abort(400, "The category could not be created.")
+            return None, 202
 
+        session.add(category)
         session.commit()
         return category, 200
 
 
 def format_update_category(source_object, parameters):
     
-    body = {}
-
-    category.name = parameters.get('name')\
+    source_object.name = parameters.get('name')\
         if parameters.get('name') else source_object.name
-    category.id_theme = parameters.get('id_theme')\
+    source_object.id_theme = parameters.get('id_theme')\
         if parameters.get('id_theme') else source_object.id_theme
 
-    return body
+    return source_object

@@ -1,16 +1,17 @@
-from flask import request, Response
+from flask import request, Response, abort, current_app
 
 from functools import wraps
 import jwt
 
-from utils import session
+from ..models import ReaderDao
 
 
 def get_auth_data():
+    session = current_app.session
     token = request.headers.get('Authorization')
     reader_id = jwt.decode(token, verify=False)['id']
-    secret = session().query(ReaderDao.secret).filter(ReaderDao.id == reader_id)
-    return token, reader_id, secret
+    secret = session.query(ReaderDao.secret).filter(ReaderDao.id == reader_id).first()[0]
+    return token, secret
 
 
 def requires_auth(f):
@@ -19,9 +20,9 @@ def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         try:
-            token, reader_id, secret = get_auth_data()
+            token, secret = get_auth_data()
             jwt.decode(token, secret)
             return f(*args, **kwargs)
         except:
-            return Response("Error during authentication.")
+            abort(401)
     return decorated

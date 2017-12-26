@@ -12,41 +12,39 @@ class Theme(Resource):
     """ Flask_restful Resource for Theme entity, for routes with a parameter. """
 
     @marshal_with(theme_fields)
-    def get(self, theme_id):
+    def get(self, id_theme):
         """ Returns a single Theme. """
 
         session = current_app.session
 
-        data = request.args
-
-        theme = session.query(ThemeDao).filter(ThemeDao.id == theme_id)
+        theme = session.query(ThemeDao).filter(ThemeDao.id == id_theme).first()
 
         if theme is None:
-            abort(404, message="Theme {} does not exist.".format(theme_id))
+            return None, 204
 
-        return ThemeDao(theme), 200
+        return theme, 200
 
-    def delete(self, theme_id):
+    def delete(self, id_theme):
         """ Deletes a single Theme. """
 
         session = current_app.session
 
-        if session.query(ThemeDao).filter(ThemeDao.id == theme_id).delete():
-            abort(404, message="Theme {} does not exist.".format(theme_id))
+        if not session.query(ThemeDao).filter(ThemeDao.id == id_theme).delete():
+            return None, 204
 
         session.commit()
         return '', 200
 
-    def put(self, theme_id):
+    def put(self, id_theme):
         """ Edits a single Theme. """
 
         session = current_app.session
 
         data = request.json
-        theme = session.query(ThemeDao).filter(ThemeDao.id == theme_id)
+        theme = session.query(ThemeDao).filter(ThemeDao.id == id_theme).first()
 
-        if theme is None():
-            abort(404, message="Theme not found.")
+        if theme is None:
+            return None, 204
 
         theme = format_update_theme(theme, data)
         session.commit()
@@ -58,20 +56,20 @@ class ThemeList(Resource):
     """ Flask_restful Resource for Theme entity, for routes with no parameter."""
 
     @marshal_with(theme_fields)
-    def get(self, reader=None):
+    def get(self, id_reader=None):
         """ Returns every single Theme. """
 
         session = current_app.session
 
         args = request.args
 
-        if reader:
-            themes = session.quert(ThemeDao).filter(ThemeDao.id_reader == reader).all()
+        if id_reader:
+            themes = session.query(ThemeDao).filter(ThemeDao.id_reader == id_reader).all()
         else:
             themes = session.query(ThemeDao).all()
 
-        if themes is None:
-            abort(404, "Themes not found.")
+        if len(themes) is 0:
+            return None, 204
 
         return themes, 200
 
@@ -85,24 +83,21 @@ class ThemeList(Resource):
         name = data.get('name')
         id_read = data.get('id_reader')
 
-        theme = ThemeDao(name, id_read)
-
-        theme = session.add(theme)
+        theme = ThemeDao(name=name, id_reader=id_read)
 
         if theme is None:
-            return abort(400, "The theme could not be created.")
+            return None, 202
 
+        session.add(theme)
         session.commit()
         return theme, 200
 
 
 def format_update_theme(source_object, parameters):
     
-    body = {}
-
-    theme.name = parameters.get('name')\
+    source_object.name = parameters.get('name')\
         if parameters.get('name') else source_object.name
-    theme.id_reader = parameters.get('id_reader')\
+    source_object.id_reader = parameters.get('id_reader')\
         if parameters.get('id_reader') else source_object.id_reader
 
-    return body
+    return source_object

@@ -28,5 +28,5 @@ def create_app(config_name='development'):
     app.session = sessionmaker(bind=engine)()
 
     register_endpoints(api)
-
+    
     return app

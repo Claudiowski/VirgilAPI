@@ -7,45 +7,47 @@ from .parsers import reader_fields
 
 from ..models import ReaderDao
 
+from ..Authentication.Authentication import requires_auth
+
 
 class Reader(Resource):
     """ Flask_restful Resource for Reader entity, for routes with a parameter. """
 
     @marshal_with(reader_fields)
-    def get(self, read_id):
+    def get(self, id_reader):
         """ Returns a single Reader. """
 
         session = current_app.session
 
-        reader = session.query(ReaderDao).filter(ReaderDao.id == read_id).first()
+        reader = session.query(ReaderDao).filter(ReaderDao.id == id_reader).first()
 
         if reader is None:
-            abort(404, message="Reader {} does not exist.".format(read_id))
+            return None, 204
 
         return reader, 200
 
-    def delete(self, read_id):
+    def delete(self, id_reader):
         """ Deletes a single Reader. """
 
         session = current_app.session
 
-        if not session.query(ReaderDao).filter(ReaderDao.id == read_id).delete():
-            abort(404, message="Reader {} does not exist.".format(read_id))
+        if not session.query(ReaderDao).filter(ReaderDao.id == id_reader).delete():
+            return None, 204
 
         session.commit()
         return '', 200
 
     @marshal_with(reader_fields)
-    def put(self, read_id):
+    def put(self, id_reader):
         """ Edits a single Reader. """
     
         session = current_app.session
 
         data = request.json
-        reader = session.query(ReaderDao).filter(ReaderDao.id == read_id).first()
+        reader = session.query(ReaderDao).filter(ReaderDao.id == id_reader).first()
 
         if reader is None:
-            abort(404, message="Reader not found.")
+            return None, 204
 
         reader = format_update_reader(reader, data)
         session.commit()
@@ -64,8 +66,8 @@ class ReaderList(Resource):
 
         readers = session.query(ReaderDao).all()
 
-        if readers is None:
-            abort(404, "No reader in database.")
+        if len(readers) is 0:
+            return None, 204
 
         return readers, 200
 
@@ -82,11 +84,11 @@ class ReaderList(Resource):
         secret = data.get('secret') or None
 
         reader = ReaderDao(pseudo=pseudo, password=pwd, secret=secret)
-        session.add(reader)
 
         if reader is None:
-            return abort(400, "The reader could not be created.")
+            return None, 202
 
+        session.add(reader)
         session.commit()
         return reader, 200
 
