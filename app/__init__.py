@@ -8,6 +8,8 @@ from sqlalchemy.orm import sessionmaker
 
 from .Resources import register_endpoints
 
+from .ArticleRenewer import ArticleRenewer
+
 from .config import config
 
 
@@ -22,11 +24,13 @@ def create_app(config_name='development'):
     conf = config[config_name]
     app.config.from_object(conf)
 
-    engine = app.engine = create_engine(conf.DB_URI + conf.DB_USER + ':'\
+    engine = create_engine(conf.DB_URI + conf.DB_USER + ':'\
              + conf.DB_PASSWORD + '@' + conf.DB_HOST + '/' + conf.DB_NAME)
 
     app.session = sessionmaker(bind=engine)()
 
     register_endpoints(api)
+
+    ArticleRenewer(app.session).start()
     
     return app

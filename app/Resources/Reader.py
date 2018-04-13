@@ -7,7 +7,7 @@ from .parsers import reader_fields
 
 from ..models import ReaderDao
 
-from ..Authentication.Authentication import requires_auth
+from ..authentication import requires_auth
 
 
 class Reader(Resource):

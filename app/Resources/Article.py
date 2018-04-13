@@ -5,126 +5,123 @@ import datetime
 from flask import g, request, Response, current_app
 from flask_restful import Resource, marshal_with, abort, reqparse
 
-from ..models import FavoriteDao, StreamDao, ReaderDao, CategoryDao, ThemeDao
+from ..models import ArticleDao, StreamDao, CategoryDao, ThemeDao, ReaderDao
 
-from .parsers import favorite_fields
+from .parsers import article_fields
 
 from datetime import datetime
 
 
-class Favorite(Resource):
-    """ Flask_restful Resource for Favorite entity, for routes with a parameter. """
+class Article(Resource):
+    """ Flask_restful Resource for Article entity, for routes with a parameter. """
 
-    @marshal_with(favorite_fields)
-    def get(self, id_fav):
-        """ Returns a single Favorite. """
+    @marshal_with(article_fields)
+    def get(self, id_article):
+        """ Returns a single Article. """
 
         session = current_app.session
 
-        favorite = session.query(FavoriteDao).filter(FavoriteDao.id == id_fav).first()
+        article = session.query(ArticleDao).filter(ArticleDao.id == id_article).first()
 
-        if favorite is None:
+        if article is None:
             return None, 204
 
-        return favorite, 200
+        return article, 200
 
-    def delete(self, id_fav):
-        """ Deletes a single Favorite. """
+    def delete(self, id_article):
+        """ Deletes a single Article. """
 
         session = current_app.session
 
-        if not session.query(FavoriteDao).filter(FavoriteDao.id == id_fav).delete():
+        if not session.query(ArticleDao).filter(ArticleDao.id == id_article).delete():
             None, 204
 
         session.commit()
         return '', 200
 
-    def put(self, id_fav):
-        """ Edits a single Favorite. """
+    def put(self, id_article):
+        """ Edits a single Article. """
 
         session = current_app.session
 
         data = request.json
-        favorite = session.query(FavoriteDao).filter(FavoriteDao.id == id_fav).first()
+        article = session.query(ArticleDao).filter(ArticleDao.id == id_article).first()
 
-        if favorite is None:
+        if article is None:
             return None, 204
 
-        favorite = format_update_favorite(favorite, data)
+        article = format_update_article(article, data)
         session.commit()
 
         return '', 200
 
 
-class FavoriteList(Resource):
-    """ Flask_restful Resource for Favorite entity, for routes with no parameter."""
+class ArticleList(Resource):
+    """ Flask_restful Resource for Article entity, for routes with no parameter."""
 
-    @marshal_with(favorite_fields)
+    @marshal_with(article_fields)
     def get(self, id_reader=None):
-        """ Returns every single Favorite. """
+        """ Returns every single Article. """
 
         session = current_app.session
 
         if id_reader:
-            favorites = session.query(FavoriteDao).join(StreamDao).join(CategoryDao)\
-                            .join(ThemeDao).join(ReaderDao)\
-                            .filter(ReaderDao.id == id_reader)\
-                            .all()
+            articles = session.query(ArticleDao).join(StreamDao).join(CategoryDao)\
+                                .join(ThemeDao).join(ReaderDao)\
+                                .filter(ReaderDao.id == id_reader)\
+                                .all()
+
 
         elif request.args.get('_categories'):
             args = reqparse.RequestParser().add_argument('_categories').parse_args()
             args = args['_categories'].split(',')
-            favorites = session.query(FavoriteDao).join(StreamDao).join(CategoryDao)\
+            print(args)
+            articles = session.query(ArticleDao).join(StreamDao).join(CategoryDao)\
                     .filter(CategoryDao.id.in_(args))\
                     .all()
 
         elif request.args.get('_themes'):
             args = reqparse.RequestParser().add_argument('_themes').parse_args()
             args = args['_themes'].split(',')
-            favorites = session.query(FavoriteDao).join(StreamDao).join(CategoryDao)\
+            print(args)
+            articles = session.query(ArticleDao).join(StreamDao).join(CategoryDao)\
                     .join(ThemeDao).filter(CategoryDao.id.in_(args))\
                     .all()
 
         else:
-            favorites = session.query(FavoriteDao).all()
+            articles = session.query(ArticleDao).all()
 
-        if len(favorites) is 0:
+        if len(articles) is 0:
             return None, 204
 
-        return favorites, 200
+        return articles, 200
 
-    @marshal_with(favorite_fields)
+    @marshal_with(article_fields)
     def post(self):
-        """ Posts a single Favorite. """
+        """ Posts a single Article. """
 
         session = current_app.session
 
         data = request.json
-
-        print(data)
-
-        annotation = data.get('annotation')
         url = data.get('url')
         title = data.get('title')
         description = data.get('description')
         publication_date = data.get('publication_date')
         id_stream = data.get('id_stream')
 
-        favorite = FavoriteDao(annotation=annotation, url=url, title=title, description=description,\
+        article = ArticleDao(annotation=annotation, url=url, title=title, description=description,\
                                publication_date=publication_date, id_stream=id_stream)
 
-        if favorite is None:
+        if article is None:
             return None, 202
 
-        session.add(favorite)
+        session.add(article)
         session.commit()
-        return favorite, 200
+        return article, 200
 
 
-def format_update_favorite(source_object, parameters):
+def format_update_article(source_object, parameters):
     
-    source_object.annotation = parameters.get('annotation')\
-        if parameters.get('url') else source_object.url
     source_object.url = parameters.get('url')\
         if parameters.get('url') else source_object.url
     source_object.title = parameters.get('title')\

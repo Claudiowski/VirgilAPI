@@ -56,7 +56,7 @@ class StreamList(Resource):
     """ Flask_restful Resource for Stream entity, for routes with no parameter."""
 
     @marshal_with(stream_fields)
-    def get(self, id_reader=None, id_theme=None, id_cat=None):
+    def get(self, id_reader=None):
         """ Returns every single Stream. """
 
         session = current_app.session
@@ -65,20 +65,16 @@ class StreamList(Resource):
             streams = session.query(StreamDao).join(CategoryDao)\
                                 .join(ThemeDao).join(ReaderDao)\
                                 .filter(ReaderDao.id == id_reader).all()
-        elif id_theme:
+
+        elif request.args.get('_categories'):
             streams = session.query(StreamDao).join(CategoryDao)\
-                                .join(ThemeDao)\
-                                .filter(ThemeDao.id == id_theme).all()
-        elif id_cat:
-            streams = session.query(StreamDao).join(CategoryDao)\
-                             .filter(CategoryDao.id == id_cat).all()
-        elif request.args['_categories']:
-            streams = session.query(StreamDao).join(CategoryDao)\
-                    .filter(CategoryDao.id.in_(request.args['_categories'])).all()
-        elif request.args['_themes']:
+                   .filter(CategoryDao.id.in_(request.args['_categories'])).all()
+
+        elif request.args.get('_themes'):
             streams = session.query(StreamDao).join(CategoryDao)\
                     .join(ThemeDao)\
                     .filter(CategoryDao.id.in_(request.args['_themes'])).all()
+                    
         else:
             streams = session.query(StreamDao).all()
 
